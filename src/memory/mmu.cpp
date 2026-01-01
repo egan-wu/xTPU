@@ -17,10 +17,41 @@ std::optional<PhysicalAddress> MMU::translate(VirtualAddress vaddr, ProcessID pi
     // We check exact matches in our map.
 
     // 1. Check for 4KB page
+    // Note: If a 2MB page is mapped, its base address key is (vaddr & 2MB_MASK).
+    // If vaddr happens to be aligned to 2MB, vpn4 == vpn2.
+    // So if we find an entry at vpn4, it MIGHT be a 2MB page entry if the key collides.
+    // However, in our mapPage logic, we store the key aligned to page size.
+    // 2MB page at 0x200000 -> Key 0x200000.
+    // 4KB page at 0x200000 -> Key 0x200000.
+    // Since we use a single map, we can't map both at same address (which is correct).
+    // But we need to check the entry type to calculate PADDR correctly.
+
     uint64_t vpn4 = vaddr & ~(PAGE_SIZE_4KB - 1);
     auto it4 = pt.entries.find(vpn4);
     if (it4 != pt.entries.end()) {
         PageTableEntry entry = it4->second;
+
+        // If this entry claims to be huge, but we found it via 4KB alignment check,
+        // it means we hit the base address of a huge page.
+        // We should process it as a huge page.
+        if (entry.huge_page) {
+             // Fall through to 2MB logic or handle here.
+             // Ideally we shouldn't have hit it here unless it was inserted with 4KB key?
+             // No, mapPage inserts with vaddr aligned to size.
+             // If vaddr=0x200000, key=0x200000. vpn4=0x200000. Match found.
+             // So we MUST handle huge_page flag here.
+
+            if (!entry.present) {
+                page_faults_++;
+                return std::nullopt;
+            }
+            if (is_write && !entry.writable) {
+                page_faults_++;
+                return std::nullopt;
+            }
+            return (entry.pfn * PAGE_SIZE_2MB) + (vaddr % PAGE_SIZE_2MB);
+        }
+
         if (!entry.present) {
             page_faults_++;
             return std::nullopt;

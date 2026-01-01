@@ -19,6 +19,7 @@ enum class Opcode {
     VEC_MUL,
     VEC_RELU,
     DUMP,   // Dump memory to file: DUMP start_addr, length, "filename" (filename passed via register/ptr or hack)
+    DMA_XFER, // DMA Transfer: DMA_XFER src_addr, dst_addr, size
     SYNC
 };
 

@@ -32,6 +32,7 @@ namespace {
         if (opStr == "VEC_MUL") return Opcode::VEC_MUL;
         if (opStr == "VEC_RELU") return Opcode::VEC_RELU;
         if (opStr == "DUMP") return Opcode::DUMP;
+        if (opStr == "DMA_XFER") return Opcode::DMA_XFER;
         if (opStr == "SYNC") return Opcode::SYNC;
         throw std::runtime_error("Unknown opcode: " + opStr);
     }

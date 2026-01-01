@@ -11,7 +11,7 @@ public:
     explicit MemorySystem(const Config& config);
 
     // Main interface for the Core
-    MemoryResponse access(const MemoryRequest& req);
+    MemoryResponse access(const MemoryRequest& req, uint64_t current_cycle = 0);
 
     // Helpers to access components directly for testing/setup
     MMU& getMMU() { return mmu_; }

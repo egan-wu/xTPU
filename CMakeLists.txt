@@ -31,6 +31,7 @@ add_library(simutpu
     src/memory/mmu.cpp
     src/memory/memory_system.cpp
     src/compute/compute.cpp
+    src/compute/dma.cpp
     src/isa/isa.cpp
     src/isa/isa_parser.cpp
     src/core/core.cpp
@@ -59,6 +60,8 @@ add_executable(simutpu_test
     tests/test_compute.cpp
     tests/test_isa.cpp
     tests/test_core.cpp
+    tests/test_dma.cpp
+    tests/test_mmu_bug.cpp
 )
 
 target_link_libraries(simutpu_test PRIVATE simutpu GTest::gtest_main)

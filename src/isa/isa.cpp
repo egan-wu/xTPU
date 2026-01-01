@@ -15,6 +15,7 @@ std::string Instruction::opcodeToString(Opcode op) {
         case Opcode::VEC_MUL: return "VEC_MUL";
         case Opcode::VEC_RELU: return "VEC_RELU";
         case Opcode::DUMP: return "DUMP";
+        case Opcode::DMA_XFER: return "DMA_XFER";
         case Opcode::SYNC: return "SYNC";
         default: return "UNKNOWN";
     }

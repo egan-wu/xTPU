@@ -2,6 +2,7 @@
 #include "simutpu/config.h"
 #include "simutpu/memory_system.h"
 #include "simutpu/compute.h"
+#include "simutpu/dma.h"
 #include "simutpu/isa.h"
 #include <vector>
 #include <array>
@@ -36,8 +37,11 @@ private:
     std::unique_ptr<MemorySystem> memory_system_;
     std::unique_ptr<MXU> mxu_;
     std::unique_ptr<VPU> vpu_;
+    std::unique_ptr<DMAUnit> dma_;
 
     // Scalar Registers R0-R31
+    // We treat registers as 64-bit values.
+    // Typed arithmetic interprets them.
     std::array<uint64_t, 32> registers_{};
 
     // Program Counter

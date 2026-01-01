@@ -1,4 +1,5 @@
 #include "simutpu/memory_system.h"
+#include "simutpu/tracer.h"
 #include <iostream>
 
 namespace simutpu {
@@ -19,7 +20,10 @@ void MemorySystem::loadPhysical(PhysicalAddress paddr, const std::vector<uint8_t
     dram_->write(paddr, data);
 }
 
-MemoryResponse MemorySystem::access(const MemoryRequest& req) {
+MemoryResponse MemorySystem::access(const MemoryRequest& req, uint64_t current_cycle) {
+    // Log Memory Access
+    Tracer::getInstance().logMemory(current_cycle, req.vaddr, req.is_write);
+
     MemoryResponse resp;
 
     // 1. Virtual to Physical Translation

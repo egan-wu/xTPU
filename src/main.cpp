@@ -5,6 +5,7 @@
 #include "simutpu/core.h"
 #include "simutpu/isa_parser.h"
 #include "simutpu/config.h"
+#include "simutpu/tracer.h"
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -14,6 +15,9 @@ int main(int argc, char** argv) {
 
     std::string programFile = argv[1];
     std::string configFile = (argc >= 3) ? argv[2] : "";
+
+    // Open Trace
+    simutpu::Tracer::getInstance().open("sim_trace.json");
 
     try {
         // Load Config

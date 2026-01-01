@@ -1,4 +1,5 @@
 #include "simutpu/core.h"
+#include "simutpu/tracer.h"
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
@@ -9,6 +10,7 @@ Core::Core(const Config& config) : config_(config) {
     memory_system_ = std::make_unique<MemorySystem>(config);
     mxu_ = std::make_unique<MXU>(config);
     vpu_ = std::make_unique<VPU>(config);
+    dma_ = std::make_unique<DMAUnit>(config, *memory_system_);
 }
 
 void Core::run(const std::vector<Instruction>& program) {
@@ -35,6 +37,9 @@ uint64_t Core::getOperandValue(const Operand& op) {
 }
 
 void Core::executeInstruction(const Instruction& instr) {
+    // Log Trace
+    Tracer::getInstance().logInstruction(cycle_count_, instr, pc_);
+
     // Basic Fetch latency
     cycle_count_ += 1;
 
@@ -50,6 +55,18 @@ void Core::executeInstruction(const Instruction& instr) {
             cycle_count_ += 1;
             break;
         }
+        case Opcode::DMA_XFER: {
+            // DMA_XFER src, dst, size
+            if (instr.operands.size() < 3) throw std::runtime_error("DMA_XFER requires 3 operands");
+            VirtualAddress src = getOperandValue(instr.operands[0]);
+            VirtualAddress dst = getOperandValue(instr.operands[1]);
+            uint64_t size = getOperandValue(instr.operands[2]);
+
+            dma_->startTransfer(src, dst, size, cycle_count_);
+            // Core dispatch latency (DMA is async)
+            cycle_count_ += 1;
+            break;
+        }
         case Opcode::LOAD: {
             // LOAD dst_reg, address
             if (instr.operands.size() < 2) throw std::runtime_error("LOAD requires 2 operands");
@@ -62,7 +79,7 @@ void Core::executeInstruction(const Instruction& instr) {
             req.is_write = false;
             req.pid = 1; // Default PID for single-core sim
 
-            auto resp = memory_system_->access(req);
+            auto resp = memory_system_->access(req, cycle_count_);
 
             // Write back to register (simplified endianness)
             uint64_t value = 0;
@@ -91,7 +108,7 @@ void Core::executeInstruction(const Instruction& instr) {
                 req.data[i] = (value >> (i*8)) & 0xFF;
             }
 
-            auto resp = memory_system_->access(req);
+            auto resp = memory_system_->access(req, cycle_count_);
             cycle_count_ += resp.latency;
             break;
         }
@@ -107,7 +124,13 @@ void Core::executeInstruction(const Instruction& instr) {
             uint64_t val1 = getOperandValue(instr.operands[1]);
             uint64_t val2 = getOperandValue(instr.operands[2]);
             size_t dst = instr.operands[0].value;
+
+            // Interpret as float for simulation demo
+            // In a real typed system, we would check status flags or instruction suffixes (VEC_ADD.F32)
+            // Here we assume simple casting for demo purpose.
+            // If values look like integers, add them.
             setRegister(dst, val1 + val2);
+
             cycle_count_ += vpu_->latency();
             break;
         }
@@ -143,15 +166,18 @@ void Core::executeInstruction(const Instruction& instr) {
                 req.is_write = false;
                 req.pid = 1;
 
-                auto resp = memory_system_->access(req);
+                auto resp = memory_system_->access(req, cycle_count_);
                 outfile << (vaddr + i) << "," << (int)resp.data[0] << "\n";
             }
             outfile.close();
             break;
         }
         case Opcode::SYNC: {
-            // Barrier
-            cycle_count_ += 10;
+            // Barrier: Wait for DMA completion
+            cycle_count_ += 1; // Dispatch
+            if (dma_->isBusy(cycle_count_)) {
+                cycle_count_ = dma_->getCompletionCycle();
+            }
             break;
         }
         default:
