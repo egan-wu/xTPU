@@ -1,0 +1,20 @@
+# Build directories
+build/
+out/
+bin/
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# IDE settings
+.vscode/
+.vs/
+*.user
+
+# Compiled binaries and objects
+*.exe
+*.dll
+*.obj
+*.pdb
