@@ -201,3 +201,80 @@ Develop a behavior-accurate software model of a Tensor Processing Unit (TPU/NPU)
 
 - Final memory state
 - Cycle count report
+
+---
+
+## 8. User Guide
+
+### Prerequisites
+
+*   **C++ Compiler**: A C++20 compliant compiler (GCC 10+, Clang 10+, MSVC 19.29+).
+*   **CMake**: Version 3.14 or later.
+*   **Python 3**: For verification scripts.
+*   **Python Dependencies**: `numpy`, `pandas`.
+
+### Building the Project
+
+1.  **Clone the repository** (if applicable).
+2.  **Create a build directory**:
+    ```bash
+    mkdir build
+    cd build
+    ```
+3.  **Configure the project**:
+    ```bash
+    cmake ..
+    ```
+4.  **Build**:
+    ```bash
+    cmake --build .
+    ```
+
+### Running Tests
+
+Unit tests are implemented using GoogleTest. After building:
+
+```bash
+ctest
+# or
+./simutpu_test
+```
+
+### Running the Simulator CLI
+
+The simulator provides a CLI tool `simutpu_cli` to execute assembly scripts.
+
+**Usage:**
+```bash
+./simutpu_cli <script_file.asm> [config_file.json]
+```
+
+**Example:**
+1.  Create a configuration file `config.json` (optional, defaults will be used):
+    ```json
+    {
+        "l1_size": 4096,
+        "dram_latency": 100
+    }
+    ```
+2.  Run the "Hello World" example:
+    ```bash
+    ./simutpu_cli ../tests/hello_world.asm config.json
+    ```
+
+**Output:**
+The simulator prints the final cycle count and register state to stdout. It also generates a `sim_trace.json` file containing the instruction and memory access trace.
+
+### Verification
+
+To verify the simulator against a Golden Model (NumPy):
+
+1.  Install dependencies:
+    ```bash
+    pip install numpy pandas
+    ```
+2.  Run the verification script:
+    ```bash
+    python3 ../scripts/verify.py
+    ```
+    This script runs the `vector_add_dump.asm` test case, parses the generated `memory_dump.csv`, and compares the results with a Python/NumPy calculation.
